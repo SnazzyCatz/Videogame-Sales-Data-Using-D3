@@ -1,0 +1,274 @@
+<html>
+<head>
+    <style>
+        .bar {
+            fill: orange;
+        }
+
+        .highlight {
+            fill: steelblue;
+        }
+</style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+  <div class='container'>
+  <div class='row'>
+  <h2> Global Sales</h2>
+
+          <div class='radio'>
+            <label class='radio-inline'>
+              <input type="radio" name="Sales" id="Yearly_Sales" value ="Years" onclick="updateData('data/yearly.csv')" > Year vs Sales
+            </label>
+            <label class='radio-inline'>
+              <input type="radio" name="Sales" id="Genre_Sales" value="Genres" onclick="updateData('data/genres.csv')"> Genre vs Sales
+            </label>
+            <label class='radio-inline'>
+              <input type="radio" name="Sales" id="Console_Sales" value="Consoles" onclick="updateData('data/consoles.csv')" > Console vs Sales
+            </label>
+          </div>
+<svg width="1500" height="750" onclick="updateData(null)"></svg>
+<script>
+
+    var svg = d3.select("svg"),
+        margin = 200,
+        width = svg.attr("width") - margin,
+        height = svg.attr("height") - margin;
+
+    var count = 0;
+
+    var radioConsole = document.getElementById('Console_Sales');
+    var radioGenre = document.getElementById('Genre_Sales');
+    var radioYear = document.getElementById('Yearly_Sales');
+
+    console.log(radioYear)
+    console.log(radioGenre)
+    console.log(radioConsole)
+
+    svg.append("text")
+       .attr("transform", "translate(300,0)")
+       .attr("x", 50)
+       .attr("y", 50)
+       .attr("font-size", "24px")
+       .text("Global Videogame Sales")
+
+    var x = d3.scaleBand().range([0, width]).padding(0.4);
+        y = d3.scaleLinear().range([height, 0]);
+
+    //var x_axis = d3.axisBottom().scale(x);
+
+    var g = svg.append("g")
+            .attr("transform", "translate(" + 100 + "," + 100 + ")");
+
+    var xAxis = g.append("g");
+    var yAxis = g.append("g");
+    var yText = g.append("g");
+    var xText = g.append("g");
+
+    d3.csv("data/yearly2.csv", function(error, data) {
+        if (error) {
+            throw error;
+        }
+        console.log("hello")
+        x.domain(data.map(function(d) { return d.Years; }));
+        y.domain([0, 700]);
+        console.log(d3.max(data, function(d) { return d.Year_Sales; }))
+
+        xAxis
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(x));
+
+
+        xText
+         .append("text")
+         .attr("class","word")
+         .attr("y", height + 50)
+         .attr("x", width/2)
+         .attr("text-anchor", "end")
+         .attr("stroke", "black")
+         .text("Year");
+
+        yAxis
+         .call(d3.axisLeft(y).tickFormat(function(d){
+             return  d;
+         }).ticks(10))
+         .append("text")
+         .attr("transform", "rotate(-90)")
+         .attr("y", 6)
+         .attr("dy", "-5.1em")
+         .attr("text-anchor", "end")
+         .attr("stroke", "black")
+         .text("Total Sales in Millions");
+
+        g.selectAll(".bar")
+         .data(data)
+         .enter().append("rect")
+         .attr("class", "bar")
+         .on("mouseover", onMouseOver) //On selection of bar elements, two new event handlers added, viz. mouseover and mouseout and we are calling the respective functions to handle mouse events
+         .on("mouseout", onMouseOut)   //done to apply animation when mouse hovers over a particular bar and goes out
+         .attr("x", function(d) { return x(d.Years); })
+         .attr("y", function(d) { return y(d.Year_Sales); })
+         .attr("width", x.bandwidth())
+         .transition()
+         .ease(d3.easeLinear)
+         .duration(5000)
+         .delay(function (d, i) {
+             return i * 50;
+         })
+         .attr("height", function(d) { return height - y(d.Year_Sales); });
+
+    });
+
+    //mouseover event handler function
+    function onMouseOver(d, i) {
+        d3.select(this).attr('class', 'highlight');  //selected bar (given by the 'this' object)
+        d3.select(this)
+          .transition()     // adds animation
+          .duration(400)
+          .attr('width', x.bandwidth() + 5)
+          .attr("y", function(d) {
+            if(radioYear.checked) {return y(d.Years_Sales)-10 + 100}
+            else if(radioGenre.checked) {return y(d.Genre_Sales)-10 + 100}
+            else if(radioConsole.checked) {return y(d.Console_Sales)-10 + 100}
+            else {return y(d.Year_Sales)-10}
+          })
+          .attr("height", function(d) {
+            if(radioYear.checked) {return height - y(d.Years_Sales)+10}
+            else if(radioGenre.checked) {return height - y(d.Genre_Sales)+10}
+            else if(radioConsole.checked) {return height - y(d.Console_Sales)+10}
+            else {return height - y(d.Year_Sales)+10}
+        });
+
+        g.append("text")
+         .attr('class', 'val')
+         .attr('x', function() {
+             return x(d.Year);
+         })
+         .attr('y', function() {
+           if(radioYear.checked) {return y(d.Years_Sales)-15}
+           else if(radioGenre.checked) {return y(d.Genre_Sales)-15}
+           else if(radioConsole.checked) {return y(d.Console_Sales)-15}
+           else {return y(d.Year_Sales)-15}
+         });
+         // .text(function() {
+         //     return [+d.FixationDuration];  // Value of the text
+         // });
+    }
+
+    //mouseout event handler function
+    function onMouseOut(d, i) {
+        // use the text label class to remove label on mouseout
+        d3.select(this).attr('class', 'bar');
+        d3.select(this)
+          .transition()     // adds animation
+          .duration(400)
+          .attr('width', x.bandwidth())
+          .attr("y", function(d) {
+            if(radioYear.checked) {return y(d.Years_Sales) + 100}
+            else if(radioGenre.checked) {return y(d.Genre_Sales) + 100}
+            else if(radioConsole.checked) {return y(d.Console_Sales) + 100}
+            else {return y(d.Year_Sales)}
+          }) // What if we don't again fix this Value ?
+          .attr("height", function(d) {
+            if(radioYear.checked) {return height - y(d.Years_Sales)}
+            else if(radioGenre.checked) {return height - y(d.Genre_Sales)}
+            else if(radioConsole.checked) {return height - y(d.Console_Sales)}
+            else {return height - y(d.Year_Sales)}
+          }); // Play with changing the Value
+
+        d3.selectAll('.val')
+          .remove()
+    }
+
+    function updateData(name) {
+      count = count + 1;
+      svg.selectAll(".bar").remove()
+      var paths = ["data/yearly.csv","data/genres.csv","data/consoles.csv"]
+
+      if(name == null) {
+        name = paths[count % 3];
+        if(name == "data/yearly.csv") {id = "Yearly_Sales"}
+        else if(name == "data/genres.csv") {id = "Genre_Sales"}
+        else {id = "Console_Sales"}
+        document.getElementById(id).checked = true;
+        console.log(name);
+      }
+      d3.csv(name,function(error,data) {
+        console.log(data)
+        x.domain(data.map(function(d){
+          if(name=='data/yearly.csv') {
+
+            return d.Year;
+          }
+          else if(name=='data/genres.csv'){
+
+            return d.Genre;
+          }
+          else if(name=='data/consoles.csv'){
+
+            return d.Console;
+          }
+          else {console.log('idk')}
+        }));
+        svg.select(".x").transition().call(d3.axisBottom().scale(x));
+        if(radioYear.checked) {y.domain([0,700]);}
+        else if(radioGenre.checked) {y.domain([0,1750]);}
+        else {y.domain([0,1250]);}
+
+        //y.domain([0,1750]);
+
+        xAxis
+         .call(d3.axisBottom(x))
+
+        if(radioYear.checked) {svg.select(".word").text("Year")}
+        else if(radioGenre.checked) {svg.select(".word").text("Genre")}
+        else {svg.select(".word").text("Console")}
+        //svg.select(".word").text("genre")
+        //xText
+         //.append("text")
+         //.text("genre")
+
+
+        yAxis
+         .call(d3.axisLeft(y).tickFormat(function(d){return d;}).ticks(20))
+
+
+
+
+        var bars =svg.selectAll(".bar")
+           .data(data)
+           .enter()
+           .append("rect")
+           .attr("class","bar")
+           .attr("x",function(d){
+             if(radioYear.checked) {return x(d.Year) + 100}
+             else if(radioGenre.checked) {return x(d.Genre) + 100}
+             else {return x(d.Console) + 100}
+           })
+           .attr("y",function(d){
+             if(radioYear.checked) {return y(d.Years_Sales) + 100}
+             //else if(radioGenre.checked) {return y(d.Genre_Sales - 127)}
+             //else {return y(d.Console_Sales - 127)}
+             else if(radioGenre.checked) {return y(d.Genre_Sales - 316)}
+             else {return y(d.Console_Sales - 227)}
+           })
+           .attr("width", x.bandwidth())
+           .attr("height",function(d){
+             if(radioYear.checked) {return height - y(d.Years_Sales)}
+             else if(radioGenre.checked) {return height - y(d.Genre_Sales)}
+             else {return height - y(d.Console_Sales)}
+           })
+           .attr("fill","orange");
+
+
+
+           bars.transition().duration(750);
+           bars.on("mouseover", onMouseOver).on("mouseout", onMouseOut);
+        console.log(data)
+      })
+    }
+
+
+</script>
+</body>
+</html>
